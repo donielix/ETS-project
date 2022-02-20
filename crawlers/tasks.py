@@ -1,10 +1,10 @@
-import os
-
 import jsonutils as js
 import pandas as pd
+import requests
 from celery import group, shared_task
+from django.db import connection
 
-from crawlers.serializers import StockHistorySerializer
+from crawlers.sql import INSERT_STOCKS
 
 
 @shared_task
@@ -19,30 +19,30 @@ def crawl_coin_date(date, convert="USD,BTC,EUR", limit=5000):
         limit: int: An external REST API param.
     """
 
-    # parse input date to an ISO date format
+    # parse user input date to an ISO date format
     date = js.parse_datetime(date).date().strftime("%Y-%m-%d")
     BASE_URL = "https://web-api.coinmarketcap.com/v1/cryptocurrency/listings/historical"
     REQUEST_PARAMS = {"convert": convert, "date": date, "limit": limit}
 
-    # with json-enhanced, make a GET request to external API and store response as a queryable JSON object.
-    response = js.JSONObject.open(BASE_URL, params=REQUEST_PARAMS)
+    # make a GET request to external API and store response as JSON object.
+    response = requests.get(BASE_URL, params=REQUEST_PARAMS).json()
 
-    queryset = response.query(market_cap=js.All).values(
-        "market_cap",
-        "price",
-        "num_market_pairs",
-        "total_supply",
-        "max_supply",
-        "cmc_rank",
-        "symbol",
-        currency="name",
-    )
+    coin_list = response["data"]
 
-    stock_serializer = StockHistorySerializer(data=queryset, many=True)
-    stock_serializer.is_valid(raise_exception=True)
-    stock_serializer.save()
+    values = [
+        (
+            c["slug"],
+            c["quote"]["EUR"]["price"],
+            c["quote"]["EUR"]["market_cap"],
+            c["quote"]["EUR"]["last_updated"],
+        )
+        for c in coin_list
+    ]
 
-    return response._data
+    values = ", ".join(map(str, values))
+
+    with connection.cursor() as cursor:
+        cursor.execute(INSERT_STOCKS % values)
 
 
 @shared_task
