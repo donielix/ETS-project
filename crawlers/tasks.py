@@ -8,9 +8,9 @@ from crawlers.sql import INSERT_STOCKS
 
 
 @shared_task
-def crawl_coin_date(date, convert="USD,BTC,EUR", limit=5000):
+def crawl_coin_date(date, convert="USD,EUR", limit=5000):
     """
-    Crawls a single date from historical coin's market API, and save it to database.
+    Crawls a single date from historical coin's market API, and save it to database with a bulk insert.
 
     Params
     ------
@@ -29,6 +29,7 @@ def crawl_coin_date(date, convert="USD,BTC,EUR", limit=5000):
 
     coin_list = response["data"]
 
+    # retrieve a list of values to insert in BBDD
     values = [
         (
             c["slug"],
@@ -39,20 +40,23 @@ def crawl_coin_date(date, convert="USD,BTC,EUR", limit=5000):
         for c in coin_list
     ]
 
+    # format values in a right way
     values = ", ".join(map(str, values))
 
+    # make SQL insert
     with connection.cursor() as cursor:
         cursor.execute(INSERT_STOCKS % values)
 
 
 @shared_task
-def crawl_coin_period(start_date, end_date, **kwargs):
+def crawl_coin_period(start_date, end_date, freq="D", **kwargs):
     """
-    :type period: tuple
+    Crawls a range period, from `start_date` to `end_date`, and frequency `freq`.
     """
 
     date_range = (
-        pd.date_range(start_date, end_date, freq="D").strftime("%Y-%m-%d").tolist()
+        pd.date_range(start_date, end_date, freq=freq).strftime("%Y-%m-%d").tolist()
     )
 
+    # concurrently call to crawl_coint_date function
     group(crawl_coin_date.s(date, **kwargs) for date in date_range)()
