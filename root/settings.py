@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_celery_results",
     "django_extensions",
+    "django_filters",
     "rest_framework",
     "graphene_django",
     "crawlers",
@@ -165,6 +166,4 @@ SHELL_PLUS_IMPORTS = [
     "from psycopg2.extras import DateRange",
 ]
 
-GRAPHENE = {
-    "SCHEMA": "root.schema.schema"
-}
+GRAPHENE = {"SCHEMA": "root.schema.schema"}
