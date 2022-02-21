@@ -9,3 +9,4 @@ json-enhanced==0.2.4
 pandas==1.4.1
 psycopg2==2.9.3
 requests==2.27.1
+graphene-django==3.0.0b7

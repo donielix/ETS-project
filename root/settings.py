@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "django_celery_results",
     "django_extensions",
     "rest_framework",
+    "graphene_django",
     "crawlers",
     "processing",
 ]
@@ -163,3 +164,7 @@ SHELL_PLUS_IMPORTS = [
     "from datetime import date, datetime",
     "from psycopg2.extras import DateRange",
 ]
+
+GRAPHENE = {
+    "SCHEMA": "root.schema.schema"
+}
