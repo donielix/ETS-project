@@ -35,3 +35,23 @@ SET pct_change = subquery.pct_change
 FROM subquery
 WHERE crawlers_stockhistory.id = subquery.id
 """
+
+# An aggregate function must be previously created with
+# CREATE AGGREGATE cumulative_mul(float8) (SFUNC = float8mul, STYPE = float8)
+CALCULATE_INDEX = """\
+WITH x AS (
+    SELECT
+        date(timestamp) AS date,
+        SUM(pct_change) + 1 AS return_sum
+    FROM
+        crawlers_stockhistory
+    WHERE currency in %(commoditites)s
+    GROUP BY date(timestamp)
+    ORDER BY date(timestamp)
+)
+
+SELECT
+    date,
+    100 * cumulative_mul(return_sum) OVER (ORDER BY date) AS price_index
+FROM x
+"""
