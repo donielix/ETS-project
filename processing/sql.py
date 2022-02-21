@@ -27,6 +27,7 @@ WITH subquery AS (
             price,
             lag(price, 1) OVER (PARTITION BY currency ORDER BY timestamp ASC) AS prev_price
         FROM crawlers_stockhistory
+        WHERE date(timestamp) BETWEEN %(from_date)s AND %(date)s
         ) t1
 )
 UPDATE crawlers_stockhistory

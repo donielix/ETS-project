@@ -105,4 +105,4 @@ def start_jobs(date):
     Execute the main flow, consisting on a chain of tasks. This must be called as a streaming process
     """
 
-    chain(crawl_coin_date.si(date), calculate_pct_change.si())()
+    chain(crawl_coin_date.si(date), calculate_pct_change.si(date))()
