@@ -66,7 +66,7 @@ def crawl_coin_date(date, convert="USD,EUR", limit=5000):
     #     },
     # }
 
-    # retrieve a list of values to insert in BBDD
+    # retrieve a list of values to insert in BBDD as a SQL command
     values = [
         (
             c["slug"],
@@ -88,7 +88,7 @@ def crawl_coin_date(date, convert="USD,EUR", limit=5000):
 @shared_task
 def crawl_coin_period(start_date, end_date, freq="D", **kwargs):
     """
-    Crawls a range period, from `start_date` to `end_date`, and frequency `freq`.
+    Crawls a range period, from `start_date` to `end_date`, and frequency `freq`. This is executed as a batch process.
     """
 
     date_range = (
@@ -101,5 +101,8 @@ def crawl_coin_period(start_date, end_date, freq="D", **kwargs):
 
 @shared_task
 def start_jobs(date):
+    """
+    Execute the main flow, consisting on a chain of tasks. This must be called as a streaming process
+    """
 
     chain(crawl_coin_date.si(date), calculate_pct_change.si())()
