@@ -1,19 +1,4 @@
-PCT_CHANGE = """\
-SELECT
-    currency,
-    price,
-    timestamp,
-    price / NULLIF(prev_price, 0) - 1 AS pct_change
-    FROM (
-    SELECT 
-        currency,
-        price,
-        timestamp,
-        lag(price, 1) OVER (PARTITION BY currency ORDER BY timestamp ASC) AS prev_price
-    FROM crawlers_stockhistory
-    ORDER BY currency, timestamp
-    ) t1
-"""
+
 
 UPDATE_PCT_CHANGE = """\
 WITH subquery AS (
@@ -45,13 +30,14 @@ WITH x AS (
         SUM(pct_change) + 1 AS return_sum
     FROM
         crawlers_stockhistory
-    WHERE currency in %(commoditites)s
+    WHERE currency in %(commodities)s
+    AND date(timestamp) <= %(date)s
     GROUP BY date(timestamp)
     ORDER BY date(timestamp)
 )
 
 SELECT
-    date,
     100 * cumulative_mul(return_sum) OVER (ORDER BY date) AS price_index
 FROM x
+WHERE date = %(date)s
 """

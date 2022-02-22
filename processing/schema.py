@@ -3,6 +3,8 @@ from crawlers.models import StockHistory
 import graphene
 from graphene import relay
 from graphene_django.filter import DjangoFilterConnectionField
+from django.db import connection
+from processing.sql import CALCULATE_INDEX
 
 
 class PriceIndexType(graphene.ObjectType):
@@ -35,4 +37,11 @@ class Query(graphene.ObjectType):
 
     def resolve_price_index(root, info, date, commodities):
 
-        return PriceIndexType(price_index=1)
+        with connection.cursor() as cursor:
+            cursor.execute(
+                CALCULATE_INDEX,
+                params={"commodities": tuple(commodities), "date": date},
+            )
+            res = cursor.fetchone()
+
+        return PriceIndexType(price_index=res[0])
